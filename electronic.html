@@ -176,13 +176,23 @@
       .then(txt => {
         let jsonData;
         try {
-          // استخدام تعبير منتظم لاستخلاص JSON من داخل دالة google.visualization.Query.setResponse
-          const jsonMatch = txt.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
-          if (!jsonMatch || jsonMatch.length < 2) {
-              throw new Error('لم يتم العثور على استجابة JSON المتوقعة من جدول البيانات.');
+          // البحث عن بداية ونهاية JSON داخل الاستجابة
+          // نبحث عن النص بعد "google.visualization.Query.setResponse(" وحتى قبل ");"
+          const startIndex = txt.indexOf('google.visualization.Query.setResponse(');
+          if (startIndex === -1) {
+            throw new Error('لم يتم العثور على بداية غلاف JSON المتوقع.');
           }
-          const jsonString = jsonMatch[1]; // هذا هو المحتوى داخل الأقواس
+
+          const afterFunctionCall = txt.substring(startIndex + 'google.visualization.Query.setResponse('.length);
+          const endIndex = afterFunctionCall.lastIndexOf(');'); // نبحث عن النهاية من آخر السلسلة
+          
+          if (endIndex === -1) {
+              throw new Error('لم يتم العثور على نهاية غلاف JSON المتوقع.');
+          }
+
+          const jsonString = afterFunctionCall.substring(0, endIndex);
           jsonData = JSON.parse(jsonString);
+          
         } catch (e) {
           throw new Error(`فشل في تحليل بيانات JSON من جدول البيانات. تأكد من أن جدول البيانات يُرجع JSON صالح. تفاصيل: ${e.message}`);
         }
