@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>إلكترونيات – وسيط المنتجات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* CSS الأصلي الخاص بك */
+    * { box-sizing: border; margin: 0; padding: 0; }
     body {
       font-family: 'Cairo', sans-serif;
       background: linear-gradient(135deg, #d9e8fc 0%, #f0f6ff 100%);
@@ -65,6 +66,8 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
       gap: 20px;
+      min-height: 300px; /* لضمان وجود مساحة لعرض رسالة "لا توجد منتجات" */
+      align-content: start; /* لضمان بدء المحتوى من الأعلى */
     }
 
     .product-card {
@@ -98,8 +101,8 @@
       flex-direction: column;
       justify-content: space-between;
     }
-    .product-name { font-weight: 700; font-size: 1.1rem; }
-    .product-price { font-weight: 600; font-size: 1.05rem; color: #4a90e2; }
+    .product-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+    .product-price { font-weight: 600; font-size: 1.05rem; color: #4a90e2; margin-bottom: 15px; }
     .product-link {
       background-color: #4a90e2;
       color: white;
@@ -110,6 +113,25 @@
       transition: background-color 0.3s ease;
     }
     .product-link:hover { background-color: #356ac3; }
+
+    /* رسائل الحالة (لتحسين تجربة المستخدم) */
+    .status-message {
+      grid-column: 1 / -1; /* لجعل الرسالة تمتد عبر جميع الأعمدة */
+      text-align: center;
+      padding: 50px 20px;
+      font-size: 1.3rem;
+      color: #555;
+      background-color: #f8f8f8;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      margin-top: 50px;
+      font-weight: 600;
+    }
+    .status-message.error {
+      color: #c0392b;
+      background-color: #fdeaea;
+      border: 1px solid #c0392b;
+    }
   </style>
 </head>
 <body>
@@ -123,33 +145,91 @@
 
   <main id="products">
     <!-- سيتم ملء هذا القسم ديناميكياً -->
+    <div class="status-message" id="loading-message">جاري تحميل المنتجات...</div>
   </main>
 
   <script>
   (function(){
     const sheetURL = 'https://docs.google.com/spreadsheets/d/19qFDigOg_jBMnAM5vN4kWsOxuTEF_1FLv_aYCgdklxQ/gviz/tq?tqx=out:json';
+    const productsContainer = document.getElementById('products');
+    const loadingMessage = document.getElementById('loading-message');
+
+    // دالة لعرض رسالة حالة
+    function displayStatusMessage(message, isError = false) {
+      if (loadingMessage) {
+        loadingMessage.remove(); // إزالة رسالة التحميل إذا كانت موجودة
+      }
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `status-message ${isError ? 'error' : ''}`;
+      msgDiv.textContent = message;
+      productsContainer.innerHTML = ''; // مسح أي محتوى سابق
+      productsContainer.appendChild(msgDiv);
+    }
+
     fetch(sheetURL)
-      .then(r => r.text())
+      .then(response => {
+        if (!response.ok) {
+          // إذا كانت الاستجابة ليست OK (مثل 404 أو 403 Forbidden)
+          throw new Error(`خطأ في الشبكة أو الخادم: ${response.status} ${response.statusText}`);
+        }
+        return response.text();
+      })
       .then(txt => {
-        const rows = JSON.parse(txt.substr(txt.indexOf('{'))).table.rows.slice(1);
-        const container = document.getElementById('products');
+        let jsonData;
+        try {
+          // محاولة استخراج JSON من النص
+          const jsonString = txt.substr(txt.indexOf('{'));
+          jsonData = JSON.parse(jsonString);
+        } catch (e) {
+          throw new Error('فشل في تحليل بيانات JSON من جدول البيانات. تأكد من أن جدول البيانات يُرجع JSON صالح.');
+        }
+
+        if (!jsonData.table || !jsonData.table.rows) {
+          throw new Error('هيكل بيانات JSON غير متوقع من جدول البيانات.');
+        }
+
+        // تخطي الصف الأول (رؤوس الأعمدة)
+        const rows = jsonData.table.rows.slice(1);
+        console.log('البيانات الخام المسترجعة من جدول البيانات:', rows); // للمساعدة في Debugging
+
+        // مسح رسالة التحميل
+        if (loadingMessage) {
+          loadingMessage.remove();
+        }
+
+        let productsFound = false;
         rows.forEach(r => {
-          const [name, price, img, link, cat] = r.c.map(c => c && c.v.trim());
-          if (cat === 'd1') {
-            const card = document.createElement('article');
-            card.className = 'product-card';
-            card.innerHTML = `
-              <img src="${img}" alt="${name}">
-              <div class="product-info">
-                <div class="product-name">${name}</div>
-                <div class="product-price">السعر: ${price} ر.س</div>
-                <a href="${link}" class="product-link" target="_blank">عرض المنتج</a>
-              </div>`;
-            container.appendChild(card);
+          // التحقق من وجود الأعمدة قبل محاولة الوصول إلى c.v
+          if (r.c && r.c.length >= 5) { // تأكد من أن هناك ما يكفي من الأعمدة (name, price, img, link, cat)
+            const [name, price, img, link, cat] = r.c.map(c => c && c.v ? String(c.v).trim() : ''); // String(c.v) لضمان التعامل كنص
+            
+            // Debugging: سجل كل صف والخاصية 'cat' الخاصة به
+            console.log(`معالجة الصف: Name: ${name}, Category: "${cat}"`);
+
+            if (cat === 'd1') { // الفئة التي تريد عرضها
+              productsFound = true;
+              const card = document.createElement('article');
+              card.className = 'product-card';
+              card.innerHTML = `
+                <img src="${img || 'https://placehold.co/190x190/eeeeee/333333?text=No+Image'}" alt="${name || 'Product Image'}">
+                <div class="product-info">
+                  <div class="product-name">${name || 'اسم المنتج غير متوفر'}</div>
+                  <div class="product-price">السعر: ${price ? price + ' ر.س' : 'غير متوفر'}</div>
+                  <a href="${link || '#'}" class="product-link" target="_blank">عرض المنتج</a>
+                </div>`;
+              productsContainer.appendChild(card);
+            }
           }
         });
+
+        if (!productsFound) {
+          displayStatusMessage('لا توجد منتجات من هذه الفئة متوفرة حالياً.');
+        }
       })
-      .catch(e => console.error('خطأ في جلب البيانات:', e));
+      .catch(e => {
+        console.error('خطأ في جلب أو معالجة البيانات:', e);
+        displayStatusMessage(`حدث خطأ أثناء تحميل المنتجات. يرجى التأكد من أن جدول البيانات متاح للعامة وأن تنسيق البيانات صحيح. تفاصيل الخطأ: ${e.message}`, true);
+      });
   })();
   </script>
 
