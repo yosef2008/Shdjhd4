@@ -135,7 +135,7 @@
         const container = document.getElementById('products');
         rows.forEach(r => {
           const [name, price, img, link, cat] = r.c.map(c => c && c.v.trim());
-          if (cat === 'إلكترونيات') {
+          if (cat === 'd1') {
             const card = document.createElement('article');
             card.className = 'product-card';
             card.innerHTML = `
