@@ -176,10 +176,15 @@
       .then(txt => {
         let jsonData;
         try {
-          const jsonString = txt.substr(txt.indexOf('{'));
+          // استخدام تعبير منتظم لاستخلاص JSON من داخل دالة google.visualization.Query.setResponse
+          const jsonMatch = txt.match(/google\.visualization\.Query\.setResponse\((.*)\);/);
+          if (!jsonMatch || jsonMatch.length < 2) {
+              throw new Error('لم يتم العثور على استجابة JSON المتوقعة من جدول البيانات.');
+          }
+          const jsonString = jsonMatch[1]; // هذا هو المحتوى داخل الأقواس
           jsonData = JSON.parse(jsonString);
         } catch (e) {
-          throw new Error('فشل في تحليل بيانات JSON من جدول البيانات. تأكد من أن جدول البيانات يُرجع JSON صالح.');
+          throw new Error(`فشل في تحليل بيانات JSON من جدول البيانات. تأكد من أن جدول البيانات يُرجع JSON صالح. تفاصيل: ${e.message}`);
         }
 
         if (!jsonData.table || !jsonData.table.rows) {
