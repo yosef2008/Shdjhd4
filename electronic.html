@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>إلكترونيات – وسيط المنتجات</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #d9e8fc 0%, #f0f6ff 100%);
+      color: #154360;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    header {
+      background-color: #4a90e2;
+      padding: 15px 30px;
+      color: white;
+      font-weight: 700;
+      font-size: 1.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 3px 8px rgba(74,144,226,0.6);
+    }
+    header .left-section {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    header .back-btn {
+      background: rgba(255,255,255,0.85);
+      border: none;
+      color: #4a90e2;
+      padding: 8px 14px;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    header .back-btn:hover {
+      background: #356ac3; color: white;
+    }
+    header .service-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: #356ac3;
+      padding: 5px 15px;
+      border-radius: 18px;
+      box-shadow: 0 3px 8px rgba(53,106,195,0.7);
+    }
+
+    main {
+      flex-grow: 1;
+      max-width: 1200px;
+      margin: 30px auto;
+      width: 95%;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
+      gap: 20px;
+    }
+
+    .product-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(21,67,96,0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 14px 32px rgba(21,67,96,0.22);
+    }
+    .product-card img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      border-bottom: 3px solid #4a90e2;
+      transition: transform 0.3s ease;
+    }
+    .product-card:hover img {
+      transform: scale(1.05);
+    }
+    .product-info {
+      padding: 18px 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .product-name { font-weight: 700; font-size: 1.1rem; }
+    .product-price { font-weight: 600; font-size: 1.05rem; color: #4a90e2; }
+    .product-link {
+      background-color: #4a90e2;
+      color: white;
+      text-align: center;
+      padding: 12px 0;
+      border-radius: 14px;
+      font-weight: 700;
+      transition: background-color 0.3s ease;
+    }
+    .product-link:hover { background-color: #356ac3; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="left-section">
+      <button class="back-btn" onclick="history.back()">رجوع</button>
+      <span class="service-name">إلكترونيات</span>
+    </div>
+  </header>
+
+  <main id="products">
+    <!-- سيتم ملء هذا القسم ديناميكياً -->
+  </main>
+
+  <script>
+  (function(){
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/19qFDigOg_jBMnAM5vN4kWsOxuTEF_1FLv_aYCgdklxQ/gviz/tq?tqx=out:json';
+    fetch(sheetURL)
+      .then(r => r.text())
+      .then(txt => {
+        const rows = JSON.parse(txt.substr(txt.indexOf('{'))).table.rows.slice(1);
+        const container = document.getElementById('products');
+        rows.forEach(r => {
+          const [name, price, img, link, cat] = r.c.map(c => c && c.v.trim());
+          if (cat === 'إلكترونيات') {
+            const card = document.createElement('article');
+            card.className = 'product-card';
+            card.innerHTML = `
+              <img src="${img}" alt="${name}">
+              <div class="product-info">
+                <div class="product-name">${name}</div>
+                <div class="product-price">السعر: ${price} ر.س</div>
+                <a href="${link}" class="product-link" target="_blank">عرض المنتج</a>
+              </div>`;
+            container.appendChild(card);
+          }
+        });
+      })
+      .catch(e => console.error('خطأ في جلب البيانات:', e));
+  })();
+  </script>
+
+</body>
+</html>

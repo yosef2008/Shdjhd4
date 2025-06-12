@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>الرئيسية – وسيط المنتجات</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #d9e8fc 0%, #f0f6ff 100%);
+      color: #154360;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      text-align: center;
+      background: #4a90e2;
+      color: #eef6ff;
+      padding: 60px 20px 40px;
+      box-shadow: inset 0 -6px 8px -6px rgba(255,255,255,0.3);
+    }
+    header h1 {
+      font-size: 2.6rem;
+      margin-bottom: 8px;
+      animation: colorChange 7s infinite alternate;
+    }
+    header p {
+      font-size: 1rem;
+      font-weight: 300;
+    }
+    @keyframes colorChange {
+      0%,100% { color: #eef6ff; }
+      25% { color: #d0e7ff; }
+      50% { color: #c0d9ff; }
+      75% { color: #b1cbff; }
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      background: #c7dbf9;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 15px 0;
+      box-shadow: 0 2px 6px rgba(21,67,96,0.15);
+      z-index: 100;
+    }
+    .nav-btn {
+      background: #4a90e2;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .nav-btn:hover {
+      background: #356ac3;
+      transform: translateY(-2px);
+    }
+
+    .main-products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 10px;
+    }
+    .product-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(21,67,96,0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 14px 32px rgba(21,67,96,0.22);
+    }
+    .product-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-bottom: 3px solid #4a90e2;
+      transition: transform 0.3s;
+    }
+    .product-card:hover img {
+      transform: scale(1.05);
+    }
+    .product-info {
+      padding: 16px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .product-name {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+    .product-price {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #4a90e2;
+      margin-bottom: 12px;
+    }
+    .product-link {
+      background: #4a90e2;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .product-link:hover {
+      background: #356ac3;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🌟 مرحباً بك في وسيط المنتجات 🌟</h1>
+    <p>أفضل العروض، بأقل جهد!</p>
+  </header>
+
+  <nav>
+    <a href="index.html" class="nav-btn">🏠 الرئيسية</a>
+    <a href="electronic.html" class="nav-btn">📱 إلكترونيات</a>
+    <a href="clothes.html" class="nav-btn">👗 أزياء</a>
+    <a href="Homeappliances.html" class="nav-btn">🏡 أدوات منزلية</a>
+  </nav>
+
+  <div id="products" class="main-products-grid">
+    <!-- سيتم ملء البطاقات هنا ديناميكياً -->
+  </div>
+
+  <script>
+    (function(){
+      const sheetURL = 'https://docs.google.com/spreadsheets/d/19qFDigOg_jBMnAM5vN4kWsOxuTEF_1FLv_aYCgdklxQ/gviz/tq?tqx=out:json';
+      fetch(sheetURL)
+        .then(res => res.text())
+        .then(txt => {
+          const allRows = JSON.parse(txt.substr(txt.indexOf('{'))).table.rows.slice(1);
+          const container = document.getElementById('products');
+          allRows.forEach(r => {
+            const [name, price, img, link, category] = r.c.map(c => c && c.v.trim());
+            const card = document.createElement('article');
+            card.className = 'product-card';
+            card.innerHTML = `
+              <img src="${img}" alt="${name}">
+              <div class="product-info">
+                <div class="product-name">${name}</div>
+                <div class="product-price">السعر: ${price} ر.س</div>
+                <a href="${link}" class="product-link" target="_blank">عرض المنتج</a>
+              </div>`;
+            container.appendChild(card);
+          });
+        })
+        .catch(err => console.error('Error loading products:', err));
+    })();
+  </script>
+
+</body>
+</html>
